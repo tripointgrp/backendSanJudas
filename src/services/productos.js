@@ -47,12 +47,28 @@ router.put("/actualizar/:id", async (req, res) => {
 
 router.get("/obtener", async (req, res) => {
   try {
-    const obtenerProducto = await Productos.find(req.params.id);
-    res.status(201).json(obtenerProducto);
+    const obtenerProductos = await Productos.find()
+      .populate("id_categoria", "nombre") // Obtiene solo el nombre de la categoría
+      .populate("id_unidad_medida", "nombre"); // Obtiene solo el nombre de la unidad de medida
+
+    res.status(200).json(obtenerProductos);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
 });
+
+router.get("/obtener/:id", async (req, res) => {
+  try {
+    const obtenerProducto = await Productos.findById(req.params.id);
+    if (!obtenerProducto) {
+      return res.status(404).json({ error: "Producto no encontrado" });
+    }
+    res.status(200).json(obtenerProducto);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 
 router.delete("/eliminar/:id", async (req, res) => {
   try {
