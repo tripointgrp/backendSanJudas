@@ -55,6 +55,9 @@ app.use("/api/reportes", reportesRoutes);
 const unidad_medidaRoutes = require("./services/unidades_medida.js");
 app.use("/api/unidades_medida", unidad_medidaRoutes);
 
+const pedidoSemanalRoutes = require("./services/pedidoSemanal.js");
+app.use("/api/pedidosSemanal", pedidoSemanalRoutes);
+
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

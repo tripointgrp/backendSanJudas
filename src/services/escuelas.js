@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { Escuela } = require("../models/escuelas.model.js");
+const { EscuelaGrados } = require("../models/escuelas_grados.model.js");
 
 router.post("/crear", async (req, res) => {
   try {
@@ -41,8 +42,21 @@ router.put("/actualizar/:id", async (req, res) => {
 
 router.get("/obtener", async (req, res) => {
   try {
-    const obtenerEscuela = await Escuela.find(req.params.id);
-    res.status(201).json(obtenerEscuela);
+    // Obtener todas las escuelas
+    const escuelas = await Escuela.find();
+
+    // Mapear cada escuela para contar sus grados
+    const escuelasConGrados = await Promise.all(
+      escuelas.map(async (escuela) => {
+        const cantidadGrados = await EscuelaGrados.countDocuments({ id_escuela: escuela._id });
+        return {
+          ...escuela.toObject(), // Convertimos a objeto plano para poder agregar campo nuevo
+          cantidadGrados,
+        };
+      })
+    );
+
+    res.status(200).json(escuelasConGrados);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
