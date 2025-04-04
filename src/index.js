@@ -43,8 +43,8 @@ app.use("/api/pedidos", pedidosRoutes);
 const presupuestos_gradosRoutes = require("./services/presupuestos_grados.js");
 app.use("/api/presupuestos_grados", presupuestos_gradosRoutes);
 
-const presupuestosRoutes = require("./services/presupuestos.js");
-app.use("/api/presupuestos", presupuestosRoutes);
+// const presupuestosRoutes = require("./services/presupuestos.js");
+// app.use("/api/presupuestos", presupuestosRoutes);
 
 const productosRoutes = require("./services/productos.js");
 app.use("/api/productos", productosRoutes);
@@ -57,6 +57,11 @@ app.use("/api/unidades_medida", unidad_medidaRoutes);
 
 const pedidoSemanalRoutes = require("./services/pedidoSemanal.js");
 app.use("/api/pedidosSemanal", pedidoSemanalRoutes);
+
+const presupuestosRealRoutes = require("./services/presupuestoReal.js");
+app.use("/api/presupuestos-real", presupuestosRealRoutes);
+
+
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
