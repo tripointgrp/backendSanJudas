@@ -1,13 +1,13 @@
 // MODELOS USADOS (ya definidos en MongoDB)
 // PresupuestoReal (semana completa)
-// PresupuestoRealPorDia (presupuesto por fecha)
+// presupuesto_real_por_dia (presupuesto por fecha)
 // DetallePresupuestoReal (productos por día y grado con costo real)
 
 const express = require("express");
 const router = express.Router();
 
 const { PresupuestoReal } = require("../models/presupuestoReal.model");
-const { PresupuestoRealPorDia } = require("../models/PresupuestoRealPorDia. model");
+const { presupuesto_real_por_dia } = require("../models/presupuesto_real_por_dia.model");
 const { DetallePresupuestoReal } = require("../models/DetallePresupuestoReal.model");
 
 // CREATE (presupuesto semanal completo)
@@ -15,7 +15,7 @@ router.post("/crear-presupuesto-semanal", async (req, res) => {
   try {
     const { id_escuela, fecha_inicio, fecha_fin, id_usuario, observaciones, dias } = req.body;
 
-    const presupuesto = new PresupuestoReal({
+    const presupuesto = new presupuesto_real_por_dia({
       id_escuela,
       fecha_inicio,
       fecha_fin,
@@ -28,7 +28,7 @@ router.post("/crear-presupuesto-semanal", async (req, res) => {
     let totalGeneral = 0;
 
     for (const dia of dias) {
-      const presupuestoDia = new PresupuestoRealPorDia({
+      const presupuestoDia = new presupuesto_real_por_dia({
         id_presupuesto: presupuesto._id,
         fecha: dia.fecha,
         total_dia: 0,
@@ -75,7 +75,7 @@ router.get("/presupuesto/:id", async (req, res) => {
       .populate("id_escuela")
       .populate("id_usuario");
 
-    const dias = await PresupuestoRealPorDia.find({ id_presupuesto: presupuesto._id });
+    const dias = await presupuesto_real_por_dia.find({ id_presupuesto: presupuesto._id });
 
     const resultado = [];
     for (const dia of dias) {
@@ -108,7 +108,7 @@ router.put("/presupuesto-dia/:id", async (req, res) => {
   try {
     const { fecha, detalles } = req.body;
 
-    await PresupuestoRealPorDia.findByIdAndUpdate(req.params.id, { fecha });
+    await presupuesto_real_por_dia.findByIdAndUpdate(req.params.id, { fecha });
     await DetallePresupuestoReal.deleteMany({ id_presupuesto_dia: req.params.id });
 
     let totalDia = 0;
@@ -130,7 +130,7 @@ router.put("/presupuesto-dia/:id", async (req, res) => {
       await nuevoDetalle.save();
     }
 
-    await PresupuestoRealPorDia.findByIdAndUpdate(req.params.id, { total_dia: totalDia });
+    await presupuesto_real_por_dia.findByIdAndUpdate(req.params.id, { total_dia: totalDia });
 
     res.json({ message: "Presupuesto diario actualizado" });
   } catch (err) {
@@ -162,7 +162,7 @@ router.get("/todos-completo", async (req, res) => {
 
     const presupuestosCompletos = await Promise.all(
       presupuestos.map(async (presupuesto) => {
-        const dias = await PresupuestoRealPorDia.find({ id_presupuesto: presupuesto._id });
+        const dias = await presupuesto_real_por_dia.find({ id_presupuesto: presupuesto._id });
 
         const diasConDetalles = await Promise.all(
           dias.map(async (dia) => {
@@ -200,11 +200,11 @@ router.get("/todos-completo", async (req, res) => {
 // DELETE (elimina presupuesto completo con días y detalles)
 router.delete("/presupuesto/:id", async (req, res) => {
   try {
-    const dias = await PresupuestoRealPorDia.find({ id_presupuesto: req.params.id });
+    const dias = await presupuesto_real_por_dia.find({ id_presupuesto: req.params.id });
 
     for (const dia of dias) {
       await DetallePresupuestoReal.deleteMany({ id_presupuesto_dia: dia._id });
-      await PresupuestoRealPorDia.findByIdAndDelete(dia._id);
+      await presupuesto_real_por_dia.findByIdAndDelete(dia._id);
     }
 
     await PresupuestoReal.findByIdAndDelete(req.params.id);
