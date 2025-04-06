@@ -43,9 +43,6 @@ app.use("/api/pedidos", pedidosRoutes);
 const presupuestos_gradosRoutes = require("./services/presupuestos_grados.js");
 app.use("/api/presupuestos_grados", presupuestos_gradosRoutes);
 
-// const presupuestosRoutes = require("./services/presupuestos.js");
-// app.use("/api/presupuestos", presupuestosRoutes);
-
 const productosRoutes = require("./services/productos.js");
 app.use("/api/productos", productosRoutes);
 
@@ -61,11 +58,5 @@ app.use("/api/pedidosSemanal", pedidoSemanalRoutes);
 const presupuestosRealRoutes = require("./services/presupuestoReal.js");
 app.use("/api/presupuestos-real", presupuestosRealRoutes);
 
-
-
-const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
-
+// Exportar la función para Vercel
 module.exports = app;
