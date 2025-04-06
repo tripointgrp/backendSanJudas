@@ -7,7 +7,7 @@ const express = require("express");
 const router = express.Router();
 
 const { PresupuestoReal } = require("../models/presupuestoReal.model");
-const { PresupuestoRealPorDia } = require("../models/presupuestoRealporDia.model");
+const { PresupuestoRealPorDia } = require("../models/PresupuestoRealPorDia. model");
 const { DetallePresupuestoReal } = require("../models/DetallePresupuestoReal.model");
 
 // CREATE (presupuesto semanal completo)
