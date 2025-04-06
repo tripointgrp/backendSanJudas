@@ -1,7 +1,7 @@
 const cors = require("cors");
 const express = require("express");
 const morgan = require("morgan");
-const { connectDB } = require("../db/dbclients.js");
+const { connectDB } = require("../../db/dbclients.js");
 require("dotenv").config();
 
 const app = express();
@@ -19,43 +19,43 @@ app.use(express.json());
 
 connectDB();
 
-const usuarioRoutes = require("./services/usuarios.js");
+const usuarioRoutes = require("../services/usuarios.js");
 app.use("/api/usuarios", usuarioRoutes);
 
-const categoriasRoutes = require("./services/categorias.js");
+const categoriasRoutes = require("../services/categorias.js");
 app.use("/api/categorias", categoriasRoutes);
 
-const detallesRoutes = require("./services/detalles_pedido.js");
+const detallesRoutes = require("../services/detalles_pedido.js");
 app.use("/api/detalles", detallesRoutes);
 
-const escuelas_gradosRoutes = require("./services/escuelas_grados.js");
+const escuelas_gradosRoutes = require("../services/escuelas_grados.js");
 app.use("/api/escuelas_grados", escuelas_gradosRoutes);
 
-const escuelaRoutes = require("./services/escuelas.js");
+const escuelaRoutes = require("../services/escuelas.js");
 app.use("/api/escuelas", escuelaRoutes);
 
-const gradoRoutes = require("./services/grado.js");
+const gradoRoutes = require("../services/grado.js");
 app.use("/api/grados", gradoRoutes);
 
-const pedidosRoutes = require("./services/pedidos.js");
+const pedidosRoutes = require("../services/pedidos.js");
 app.use("/api/pedidos", pedidosRoutes);
 
-const presupuestos_gradosRoutes = require("./services/presupuestos_grados.js");
+const presupuestos_gradosRoutes = require("../services/presupuestos_grados.js");
 app.use("/api/presupuestos_grados", presupuestos_gradosRoutes);
 
-const productosRoutes = require("./services/productos.js");
+const productosRoutes = require("../services/productos.js");
 app.use("/api/productos", productosRoutes);
 
-const reportesRoutes = require("./services/reportes.js");
+const reportesRoutes = require("../services/reportes.js");
 app.use("/api/reportes", reportesRoutes);
 
-const unidad_medidaRoutes = require("./services/unidades_medida.js");
+const unidad_medidaRoutes = require("../services/unidades_medida.js");
 app.use("/api/unidades_medida", unidad_medidaRoutes);
 
-const pedidoSemanalRoutes = require("./services/pedidoSemanal.js");
+const pedidoSemanalRoutes = require("../services/pedidoSemanal.js");
 app.use("/api/pedidosSemanal", pedidoSemanalRoutes);
 
-const presupuestosRealRoutes = require("./services/presupuestoReal.js");
+const presupuestosRealRoutes = require("../services/presupuestoReal.js");
 app.use("/api/presupuestos-real", presupuestosRealRoutes);
 
 // Exportar la función para Vercel
