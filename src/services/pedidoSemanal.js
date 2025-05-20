@@ -96,69 +96,69 @@ router.put("/pedido-dia/:id", async (req, res) => {
 });
 
 router.get("/todos", async (req, res) => {
-    try {
-      const pedidos = await Pedidos.find()
-        .sort({ fecha_inicio: -1 })
-        .populate("id_escuela")
-        .populate("id_usuario");
-  
-      res.json(pedidos);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
+  try {
+    const pedidos = await Pedidos.find()
+      .sort({ fecha_inicio: -1 })
+      .populate("id_escuela")
+      .populate("id_usuario");
 
-  router.get("/todos-completo", async (req, res) => {
-    try {
-      const pedidos = await Pedidos.find()
-        .sort({ fecha_inicio: -1 })
-        .populate("id_escuela")
-        .populate("id_usuario");
-  
-      const pedidosConDiasYDetalles = await Promise.all(
-        pedidos.map(async (pedido) => {
-          const dias = await PedidoPorDia.find({ id_pedido: pedido._id });
-  
-          const diasConDetalles = await Promise.all(
-            dias.map(async (dia) => {
-              const detalles = await DetallePedido.find({ id_pedido_dia: dia._id })
-                .populate({
+    res.json(pedidos);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get("/todos-completo", async (req, res) => {
+  try {
+    const pedidos = await Pedidos.find()
+      .sort({ fecha_inicio: -1 })
+      .populate("id_escuela")
+      .populate("id_usuario");
+
+    const pedidosConDiasYDetalles = await Promise.all(
+      pedidos.map(async (pedido) => {
+        const dias = await PedidoPorDia.find({ id_pedido: pedido._id });
+
+        const diasConDetalles = await Promise.all(
+          dias.map(async (dia) => {
+            const detalles = await DetallePedido.find({ id_pedido_dia: dia._id })
+              .populate({
+                path: 'id_grado',
+                populate: {
                   path: 'id_grado',
-                  populate: {
-                    path: 'id_grado',
-                    model: 'Grado'
-                  }
-                })              
-                .populate("id_producto")
-                .populate("unidad_medida");
-  
-              return {
-                ...dia.toObject(),
-                detalles,
-              };
-            })
-          );
-  
-          return {
-            ...pedido.toObject(),
-            dias: diasConDetalles,
-          };
-        })
-      );
+                  model: 'Grado'
+                }
+              })
+              .populate("id_producto")
+              .populate("unidad_medida");
 
-      // Esto debería traer el grado completo
-const test = await DetallePedido.findOne().populate('id_grado');
-console.log(test.id_grado); // debería mostrar el objeto, no null
+            return {
+              ...dia.toObject(),
+              detalles,
+            };
+          })
+        );
 
-  
-      res.json(pedidosConDiasYDetalles);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  
-  
-  
+        return {
+          ...pedido.toObject(),
+          dias: diasConDetalles,
+        };
+      })
+    );
+
+    // Esto debería traer el grado completo
+    const test = await DetallePedido.findOne().populate('id_grado');
+    console.log(test.id_grado); // debería mostrar el objeto, no null
+
+
+    res.json(pedidosConDiasYDetalles);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+
 
 // DELETE (elimina pedido completo con todos los días y detalles)
 router.delete("/pedido/:id", async (req, res) => {
@@ -177,5 +177,52 @@ router.delete("/pedido/:id", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+router.get("/productos-por-fechas", async (req, res) => {
+  try {
+    const { fecha_inicio, fecha_fin } = req.query;
+
+    if (!fecha_inicio || !fecha_fin) {
+      return res.status(400).json({ error: "Debes enviar fecha_inicio y fecha_fin en query params." });
+    }
+
+    const pedidos = await Pedidos.find({
+      fecha_inicio: { $gte: new Date(fecha_inicio) },
+      fecha_fin: { $lte: new Date(fecha_fin) }
+    });
+
+    const pedidoIds = pedidos.map(p => p._id);
+    const dias = await PedidoPorDia.find({ id_pedido: { $in: pedidoIds } });
+    const diaIds = dias.map(d => d._id);
+
+    const detalles = await DetallePedido.find({ id_pedido_dia: { $in: diaIds } })
+      .populate("id_producto")
+      .populate("unidad_medida");
+
+    const productosMap = new Map();
+
+    for (const detalle of detalles) {
+      const productoId = detalle.id_producto?._id?.toString();
+      const unidadId = detalle.unidad_medida?._id?.toString();
+      const clave = `${productoId}-${unidadId}`;
+
+      if (!productosMap.has(clave)) {
+        productosMap.set(clave, {
+          producto: detalle.id_producto?.nombre || "Sin nombre",
+          unidad: detalle.unidad_medida?.nombre || "Sin unidad",
+          cantidad_total: 0
+        });
+      }
+
+      productosMap.get(clave).cantidad_total += detalle.cantidad;
+    }
+
+    res.status(200).json(Array.from(productosMap.values()));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 
 module.exports = router;

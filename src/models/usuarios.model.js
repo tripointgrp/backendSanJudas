@@ -9,7 +9,7 @@ const usuarioSchema = new Schema(
     contacto: { type: String },
     tipo_usuario: {
       type: String,
-      enum: ["Administrador", "Usuario_comun"],
+      enum: ["Administrador", "Usuario_comun", "AuxAdmin"],
       required: true,
     },
   },

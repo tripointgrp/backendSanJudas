@@ -40,9 +40,6 @@ app.use("/api/grados", gradoRoutes);
 const pedidosRoutes = require("../services/pedidos.js");
 app.use("/api/pedidos", pedidosRoutes);
 
-const presupuestos_gradosRoutes = require("../services/presupuestos_grados.js");
-app.use("/api/presupuestos_grados", presupuestos_gradosRoutes);
-
 const productosRoutes = require("../services/productos.js");
 app.use("/api/productos", productosRoutes);
 
@@ -57,6 +54,19 @@ app.use("/api/pedidosSemanal", pedidoSemanalRoutes);
 
 const presupuestosRealRoutes = require("../services/presupuestoReal.js");
 app.use("/api/presupuestos-real", presupuestosRealRoutes);
+
+const presupuestoEscuela = require("../services/PresupuestoEscuelaV2.js");
+app.use("/api/PresupuestoEscuelaV2", presupuestoEscuela );
+
+const presupuestoGrados = require("../services/PresupuestoGradoV2.js");
+app.use("/api/PresupuestoGradoV2", presupuestoGrados);
+
+
+const PORT = process.env.PORT || 4000;
+
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
 
 // Exportar la función para Vercel
 module.exports = app;

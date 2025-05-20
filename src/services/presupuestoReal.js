@@ -7,7 +7,7 @@ const express = require("express");
 const router = express.Router();
 
 const { PresupuestoReal } = require("../models/presupuestoReal.model");
-const { presupuesto_real_por_dia } = require("../models/presupuesto_real_por_dia.model");
+const { presupuestoRealPorDia } = require("../models/presupuesto_real_por_dia.model");
 const { DetallePresupuestoReal } = require("../models/DetallePresupuestoReal.model");
 
 // CREATE (presupuesto semanal completo)
@@ -15,7 +15,8 @@ router.post("/crear-presupuesto-semanal", async (req, res) => {
   try {
     const { id_escuela, fecha_inicio, fecha_fin, id_usuario, observaciones, dias } = req.body;
 
-    const presupuesto = new presupuesto_real_por_dia({
+    // 1. Crear el presupuesto general
+    const presupuesto = new PresupuestoReal({
       id_escuela,
       fecha_inicio,
       fecha_fin,
@@ -23,16 +24,19 @@ router.post("/crear-presupuesto-semanal", async (req, res) => {
       observaciones,
       total: 0,
     });
-    await presupuesto.save();
+
+    await presupuesto.save(); // 👈 esto es vital para que presupuesto._id exista
 
     let totalGeneral = 0;
 
     for (const dia of dias) {
-      const presupuestoDia = new presupuesto_real_por_dia({
-        id_presupuesto: presupuesto._id,
+      // 2. Crear presupuesto por día
+      const presupuestoDia = new presupuestoRealPorDia({
+        id_presupuesto: presupuesto._id, // 👈 ahora sí está definido
         fecha: dia.fecha,
         total_dia: 0,
       });
+
       await presupuestoDia.save();
 
       let totalDia = 0;
@@ -49,16 +53,20 @@ router.post("/crear-presupuesto-semanal", async (req, res) => {
           precio_unitario: detalle.precio_unitario,
           unidad_medida: detalle.unidad_medida,
           proveedor: detalle.proveedor,
-          subtotal,
+          subtotal
         });
+
         await detallePresupuesto.save();
       }
 
+      // 3. Actualizar total del día
       presupuestoDia.total_dia = totalDia;
       await presupuestoDia.save();
+
       totalGeneral += totalDia;
     }
 
+    // 4. Actualizar total general
     presupuesto.total = totalGeneral;
     await presupuesto.save();
 
@@ -75,7 +83,7 @@ router.get("/presupuesto/:id", async (req, res) => {
       .populate("id_escuela")
       .populate("id_usuario");
 
-    const dias = await presupuesto_real_por_dia.find({ id_presupuesto: presupuesto._id });
+    const dias = await presupuestoRealPorDia.find({ id_presupuesto: presupuesto._id });
 
     const resultado = [];
     for (const dia of dias) {
@@ -162,7 +170,9 @@ router.get("/todos-completo", async (req, res) => {
 
     const presupuestosCompletos = await Promise.all(
       presupuestos.map(async (presupuesto) => {
-        const dias = await presupuesto_real_por_dia.find({ id_presupuesto: presupuesto._id });
+        const dias = await presupuestoRealPorDia.find({ id_presupuesto: presupuesto._id });
+
+        let totalGeneral = 0;
 
         const diasConDetalles = await Promise.all(
           dias.map(async (dia) => {
@@ -177,21 +187,40 @@ router.get("/todos-completo", async (req, res) => {
               .populate("id_producto")
               .populate("unidad_medida");
 
+            let totalDia = 0;
+
+            const detallesEnriquecidos = detalles.map((detalle) => {
+              const subtotal = detalle.cantidad_comprada * detalle.precio_unitario;
+              totalDia += subtotal;
+
+              return {
+                ...detalle.toObject(),
+                nombre_grado: detalle.id_grado?.id_grado?.nombre || "Sin grado",
+                nombre_producto: detalle.id_producto?.nombre || "Sin producto",
+                unidad: detalle.unidad_medida?.nombre || "Sin unidad",
+                subtotal
+              };
+            });
+
+            totalGeneral += totalDia;
+
             return {
               ...dia.toObject(),
-              detalles,
+              total_dia: totalDia,
+              detalles: detallesEnriquecidos
             };
           })
         );
 
         return {
           ...presupuesto.toObject(),
-          dias: diasConDetalles,
+          total_general: totalGeneral,
+          dias: diasConDetalles
         };
       })
     );
 
-    res.json(presupuestosCompletos);
+    res.status(200).json(presupuestosCompletos);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -200,11 +229,11 @@ router.get("/todos-completo", async (req, res) => {
 // DELETE (elimina presupuesto completo con días y detalles)
 router.delete("/presupuesto/:id", async (req, res) => {
   try {
-    const dias = await presupuesto_real_por_dia.find({ id_presupuesto: req.params.id });
+    const dias = await presupuestoRealPorDia.find({ id_presupuesto: req.params.id });
 
     for (const dia of dias) {
       await DetallePresupuestoReal.deleteMany({ id_presupuesto_dia: dia._id });
-      await presupuesto_real_por_dia.findByIdAndDelete(dia._id);
+      await presupuestoRealPorDia.findByIdAndDelete(dia._id);
     }
 
     await PresupuestoReal.findByIdAndDelete(req.params.id);

@@ -3,6 +3,7 @@ const router = express.Router();
 const { EscuelaGrados } = require("../models/escuelas_grados.model.js");
 const { Grado } = require("../models/grado.model.js");
 const mongoose = require("mongoose");
+const { PresupuestoGrado } = require("../models/PresupuestoGrado.js");
 
 router.post("/crear", async (req, res) => {
   try {
@@ -69,13 +70,22 @@ router.get("/grados-por-escuela/:id", async (req, res) => {
     const { id } = req.params;
 
     const gradosDeEscuela = await EscuelaGrados.find({ id_escuela: id })
-      .populate("id_grado", "nombre"); // Esto trae el nombre y el _id por defecto
+      .populate("id_grado", "nombre");
 
-    // Devolver el id y nombre de cada grado
-    const grados = gradosDeEscuela.map((eg) => ({
-      id: eg._id,
-      nombre: eg.id_grado.nombre,
-    }));
+    // Para cada grado, contar los presupuestos relacionados
+    const grados = await Promise.all(
+      gradosDeEscuela.map(async (eg) => {
+        const cantidadPresupuestos = await PresupuestoGrado.countDocuments({
+          id_escuela_grado: eg._id,
+        });
+
+        return {
+          id: eg._id,
+          nombre: eg.id_grado.nombre,
+          cantidad_presupuestos: cantidadPresupuestos,
+        };
+      })
+    );
 
     res.status(200).json({ grados });
   } catch (error) {
